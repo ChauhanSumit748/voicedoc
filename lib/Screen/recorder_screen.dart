@@ -40,8 +40,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
     "Default"
   ];
 
-  List<String> _selectedFields = [];
-
+  Map<String, List<String>> _departmentFields = {};
   List<RecordingMeta> _saved = [];
   late final scheduler.Ticker _ticker;
   String? _tempFilePath;
@@ -49,8 +48,8 @@ class _RecorderScreenState extends State<RecorderScreen> {
   @override
   void initState() {
     super.initState();
+    _initDepartmentFields();
     _loadSaved();
-    _loadSelectedFields();
     _ticker = scheduler.Ticker(_onTick);
   }
 
@@ -65,36 +64,28 @@ class _RecorderScreenState extends State<RecorderScreen> {
       setState(() {
         _recordDuration = _elapsedBeforePause + elapsed;
         _timerText =
-            '${_twoDigits(_recordDuration.inMinutes)}:${_twoDigits(_recordDuration.inSeconds % 60)}';
+        '${_twoDigits(_recordDuration.inMinutes)}:${_twoDigits(_recordDuration.inSeconds % 60)}';
       });
     }
   }
 
   String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
-  Future<void> _loadSelectedFields() async {
+  void _initDepartmentFields() async {
     final prefs = await SharedPreferences.getInstance();
-    final s = prefs.getStringList('selected_fields_v1');
-
-    if (s != null) {
-      setState(() {
-        _selectedFields = s;
-      });
-    } else {
-      setState(() {
-        _selectedFields = [
-          'Chief Complaints',
-          'Allergy',
-          'Past Medical History',
-        ];
-      });
-      await prefs.setStringList('selected_fields_v1', _selectedFields);
+    for (var dept in _defaultOptions) {
+      final saved = prefs.getStringList('fields_$dept');
+      _departmentFields[dept] = saved ??
+          (dept == "Default"
+              ? ['Chief Complaints', 'Allergy', 'Past Medical History']
+              : []);
     }
+    setState(() {});
   }
 
-  Future<void> _saveSelectedFields() async {
+  Future<void> _saveDepartmentFields(String dept) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('selected_fields_v1', _selectedFields);
+    await prefs.setStringList('fields_$dept', _departmentFields[dept] ?? []);
   }
 
   Future<void> _loadSaved() async {
@@ -188,7 +179,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
       id: _recordId.trim(),
       filePath: _tempFilePath!,
       timestampMillis: DateTime.now().millisecondsSinceEpoch,
-      fields: [_selectedDefault, ..._selectedFields.toSet().toList()],
+      fields: [_selectedDefault, ...(_departmentFields[_selectedDefault] ?? [])],
     );
 
     setState(() {
@@ -217,24 +208,24 @@ class _RecorderScreenState extends State<RecorderScreen> {
           content: TextField(
             controller: controller,
             decoration:
-                const InputDecoration(hintText: 'Field name e.g. Diagnosis'),
+            const InputDecoration(hintText: 'Field name e.g. Diagnosis'),
           ),
           actions: [
             TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel')),
             ElevatedButton(
                 onPressed: () {
                   final v = controller.text.trim();
                   if (v.isNotEmpty) {
                     setState(() {
-                      if (!_selectedFields.contains(v)) {
-                        _selectedFields.add(v);
+                      final fields = _departmentFields[_selectedDefault] ?? [];
+                      if (!fields.contains(v)) {
+                        fields.add(v);
+                        _departmentFields[_selectedDefault] = fields;
                       }
                     });
-                    _saveSelectedFields();
+                    _saveDepartmentFields(_selectedDefault);
                     Navigator.pop(context);
                   }
                 },
@@ -247,8 +238,6 @@ class _RecorderScreenState extends State<RecorderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final headlineStyle =
-        GoogleFonts.workSans(fontSize: 18, fontWeight: FontWeight.bold);
     final bodyStyle = GoogleFonts.workSans(fontSize: 14, color: Colors.white);
 
     return Scaffold(
@@ -280,83 +269,80 @@ class _RecorderScreenState extends State<RecorderScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                Column(
+                const Icon(Icons.mic, size: 70, color: Colors.white),
+                const SizedBox(height: 8),
+                Text(
+                  _timerText,
+                  style: GoogleFonts.workSans(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Wrap(
+                  spacing: 12,
+                  alignment: WrapAlignment.center,
                   children: [
-                    const Icon(Icons.mic, size: 70, color: Colors.white),
-                    const SizedBox(height: 8),
-                    Text(
-                      _timerText,
-                      style: GoogleFonts.workSans(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    ElevatedButton(
+                      onPressed:
+                      _isRecording && !_isPaused ? null : _startRecord,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: const CircleBorder(),
+                        elevation: 6,
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(18.0),
+                        child: Icon(Icons.fiber_manual_record,
+                            size: 28, color: Colors.white),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Wrap(
-                      spacing: 12,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed:
-                              _isRecording && !_isPaused ? null : _startRecord,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            shape: const CircleBorder(),
-                            elevation: 6,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(18.0),
-                            child: Icon(Icons.fiber_manual_record,
-                                size: 28, color: Colors.white),
-                          ),
+                    ElevatedButton(
+                      onPressed: _isRecording ? _pauseResumeRecording : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                        _isPaused ? Colors.green : Colors.white,
+                        shape: const CircleBorder(),
+                        elevation: 6,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(18.0),
+                        child: Icon(
+                            _isPaused ? Icons.play_arrow : Icons.pause,
+                            size: 28,
+                            color: _isPaused ? Colors.white : Colors.black87),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _saveRecording,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 6,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 8.0),
+                        child: Text(
+                          'Process',
+                          style: GoogleFonts.workSans(
+                              fontSize: 16, color: Colors.white),
                         ),
-                        ElevatedButton(
-                          onPressed:
-                              _isRecording ? _pauseResumeRecording : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _isPaused ? Colors.green : Colors.white,
-                            shape: const CircleBorder(),
-                            elevation: 6,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Icon(
-                                _isPaused ? Icons.play_arrow : Icons.pause,
-                                size: 28,
-                                color:
-                                    _isPaused ? Colors.white : Colors.black87),
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: _saveRecording,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                            elevation: 6,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 8.0),
-                            child: Text(
-                              'Process',
-                              style: GoogleFonts.workSans(
-                                  fontSize: 16, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 30),
                 Text(
                   'Please let everyone know that you\'re recording',
                   style: bodyStyle.copyWith(color: Colors.white70),
                 ),
                 const SizedBox(height: 20),
+
                 TextField(
                   onChanged: (v) => setState(() => _recordId = v),
                   style: GoogleFonts.workSans(),
@@ -371,6 +357,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
                 Card(
                   elevation: 6,
                   color: Colors.white,
@@ -382,24 +369,20 @@ class _RecorderScreenState extends State<RecorderScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedDefault,
-                            items: _defaultOptions
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e,
-                                          style: GoogleFonts.workSans()),
-                                    ))
-                                .toList(),
-                            onChanged: (v) => setState(
-                                () => _selectedDefault = v ?? _selectedDefault),
-                            decoration: const InputDecoration(
-                              labelText: "Select Department",
-                              prefixIcon: Icon(Icons.local_hospital),
-                              border: OutlineInputBorder(),
-                            ),
+                        DropdownButtonFormField<String>(
+                          value: _selectedDefault,
+                          items: _defaultOptions
+                              .map((e) => DropdownMenuItem(
+                            value: e,
+                            child: Text(e, style: GoogleFonts.workSans()),
+                          ))
+                              .toList(),
+                          onChanged: (v) => setState(
+                                  () => _selectedDefault = v ?? _selectedDefault),
+                          decoration: const InputDecoration(
+                            labelText: "Select Department",
+                            prefixIcon: Icon(Icons.local_hospital),
+                            border: OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -412,23 +395,26 @@ class _RecorderScreenState extends State<RecorderScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Center(child: Text("Select Field")),
+                              Center(
+                                  child: Text("Fields for $_selectedDefault")),
                               const Divider(),
                               const SizedBox(height: 8),
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 6,
-                                children: _selectedFields
+                                children: (_departmentFields[_selectedDefault] ?? [])
                                     .map((f) => Chip(
-                                          label: Text(f,
-                                              style: GoogleFonts.workSans()),
-                                          deleteIconColor: Colors.red,
-                                          onDeleted: () {
-                                            setState(() =>
-                                                _selectedFields.remove(f));
-                                            _saveSelectedFields();
-                                          },
-                                        ))
+                                  label: Text(f,
+                                      style: GoogleFonts.workSans()),
+                                  deleteIconColor: Colors.red,
+                                  onDeleted: () {
+                                    setState(() {
+                                      _departmentFields[_selectedDefault]
+                                          ?.remove(f);
+                                    });
+                                    _saveDepartmentFields(_selectedDefault);
+                                  },
+                                ))
                                     .toList(),
                               ),
                               const SizedBox(height: 14),
