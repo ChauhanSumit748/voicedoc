@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">657344197924-3m4fvm03bhc7mloh28j0jgv2okjudhd6.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://candid-cf9fc-default-rtdb.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">657344197924</string>
+    <string name="google_api_key" translatable="false">AIzaSyDI9U3lfRpFuWK66wRyh6_GKbBA-tcCJeE</string>
+    <string name="google_app_id" translatable="false">1:657344197924:android:10317c6651e51702362fb1</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDI9U3lfRpFuWK66wRyh6_GKbBA-tcCJeE</string>
+    <string name="google_storage_bucket" translatable="false">candid-cf9fc.appspot.com</string>
+    <string name="project_id" translatable="false">candid-cf9fc</string>
+</resources>

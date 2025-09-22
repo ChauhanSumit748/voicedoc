@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:voicedoc/modul/recording_modul.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'PDFScreen.dart';
 
 class AllRecordingsScreen extends StatefulWidget {
   @override
@@ -67,7 +68,7 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
     try {
       await Share.shareXFiles([XFile(meta.filePath)],
           text:
-              '${meta.id} • ${DateTime.fromMillisecondsSinceEpoch(meta.timestampMillis).toLocal()}');
+          '${meta.id} • ${DateTime.fromMillisecondsSinceEpoch(meta.timestampMillis).toLocal()}');
     } catch (e) {
       debugPrint('share error: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -108,7 +109,7 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
 
   Widget _buildRow(RecordingMeta meta) {
     final dt =
-        DateTime.fromMillisecondsSinceEpoch(meta.timestampMillis).toLocal();
+    DateTime.fromMillisecondsSinceEpoch(meta.timestampMillis).toLocal();
     final date = '${dt.day}-${dt.month}-${dt.year}';
     final time =
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
@@ -194,60 +195,82 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    border: Border.all(color: Colors.white),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        Text('Show',
-                            style: GoogleFonts.workSans(color: Colors.white)),
-                        const SizedBox(width: 8),
-                        DropdownButton<int>(
-                          value: _perPage,
-                          dropdownColor: Colors.black,
-                          style: GoogleFonts.workSans(color: Colors.white),
-                          iconEnabledColor: Colors.white,
-                          underline: Container(
-                            height: 1,
-                            color: Colors.white,
+
+                // 🔹 Row me Show dropdown (left) aur PDF button (right)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Text('Show',
+                              style:
+                              GoogleFonts.workSans(color: Colors.white)),
+                          const SizedBox(width: 8),
+                          DropdownButton<int>(
+                            value: _perPage,
+                            dropdownColor: Colors.black,
+                            style: GoogleFonts.workSans(color: Colors.white),
+                            iconEnabledColor: Colors.white,
+                            underline: Container(
+                              height: 1,
+                              color: Colors.white,
+                            ),
+                            items: [10, 20, 50, 100]
+                                .map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(
+                                '$e',
+                                style: GoogleFonts.workSans(
+                                    color: Colors.white),
+                              ),
+                            ))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _perPage = v;
+                                _page = 1;
+                              });
+                            },
                           ),
-                          items: [10, 20, 50, 100]
-                              .map((e) => DropdownMenuItem(
-                                    value: e,
-                                    child: Text(
-                                      '$e',
-                                      style: GoogleFonts.workSans(
-                                          color: Colors.white),
-                                    ),
-                                  ))
-                              .toList(),
-                          onChanged: (v) {
-                            if (v == null) return;
-                            setState(() {
-                              _perPage = v;
-                              _page = 1;
-                            });
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.picture_as_pdf,color: Colors.white,),
+                      label: Text("PDF",
+                          style: GoogleFonts.workSans(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => HospitalPDFPage()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
+
                 const SizedBox(height: 12),
                 Expanded(
                   child: _all.isEmpty
                       ? Center(
-                          child: Text('No recordings saved',
-                              style: GoogleFonts.workSans(color: Colors.white)))
+                      child: Text('No recordings saved',
+                          style: GoogleFonts.workSans(color: Colors.white)))
                       : ListView(
-                          children: _paged.map((r) => _buildRow(r)).toList(),
-                        ),
+                    children: _paged.map((r) => _buildRow(r)).toList(),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SingleChildScrollView(
