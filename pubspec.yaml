@@ -53,6 +53,9 @@ dependencies:
   firebase_core:
   firebase_storage: ^12.4.9
   cloud_firestore: ^5.6.11
+  camera: ^0.10.5+9
+  video_player: ^2.8.1
+  speech_to_text: ^6.6.0  # Use the latest version
 
 dev_dependencies:
   flutter_test:

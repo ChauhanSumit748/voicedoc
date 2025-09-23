@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.voicedoc"
-    compileSdk = flutter.compileSdkVersion
+    compileSdkVersion 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

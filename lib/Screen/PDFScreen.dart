@@ -4,14 +4,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
-// <CHANGE> Firebase & bytes
 import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class HospitalPDFPage extends StatefulWidget {
-  const HospitalPDFPage({super.key});
+  final String? recordId;
+  final String? selectedDepartment;
+
+  const HospitalPDFPage({
+    super.key,
+    this.recordId,
+    this.selectedDepartment,
+  });
 
   @override
   State<HospitalPDFPage> createState() => _HospitalPDFPageState();
@@ -19,18 +24,30 @@ class HospitalPDFPage extends StatefulWidget {
 
 class _HospitalPDFPageState extends State<HospitalPDFPage> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController idController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController signerNameController = TextEditingController();
+  final TextEditingController recordIdController = TextEditingController();
+  final TextEditingController departmentController = TextEditingController();
 
   String? selectedDepartment;
   bool agree = false;
 
   final _formKey = GlobalKey<FormState>();
 
-  // <CHANGE> Upload helper: saves bytes to Firebase Storage and metadata to Firestore
+  @override
+  void initState() {
+    super.initState();
+    selectedDepartment = widget.selectedDepartment;
+    if (widget.recordId != null) {
+      recordIdController.text = widget.recordId!;
+    }
+    if (widget.selectedDepartment != null) {
+      departmentController.text = widget.selectedDepartment!;
+    }
+  }
+
   Future<String> _uploadPdfToFirebase(
       Uint8List bytes, {
         required String fileName,
@@ -86,6 +103,12 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
           icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(30),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -127,6 +150,38 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
+                      if (widget.recordId != null) ...[
+                        TextFormField(
+                          controller: recordIdController,
+                          enabled: false, // Read-only
+                          decoration: InputDecoration(
+                            labelText: "Record ID",
+                            labelStyle: GoogleFonts.workSans(),
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.badge),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          style: GoogleFonts.workSans(),
+                        ),
+                        const SizedBox(height: 15),
+                      ],
+                      if (widget.selectedDepartment != null) ...[
+                        TextFormField(
+                          controller: departmentController,
+                          enabled: false, // Read-only
+                          decoration: InputDecoration(
+                            labelText: "Department",
+                            labelStyle: GoogleFonts.workSans(),
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.local_hospital),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          style: GoogleFonts.workSans(),
+                        ),
+                        const SizedBox(height: 15),
+                      ],
                       TextFormField(
                         controller: nameController,
                         validator: (value) =>
@@ -136,19 +191,6 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                           labelStyle: GoogleFonts.workSans(),
                           border: const OutlineInputBorder(),
                           prefixIcon: const Icon(Icons.person),
-                        ),
-                        style: GoogleFonts.workSans(),
-                      ),
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: idController,
-                        validator: (value) =>
-                        value!.isEmpty ? "Enter patient ID" : null,
-                        decoration: InputDecoration(
-                          labelText: "Patient ID",
-                          labelStyle: GoogleFonts.workSans(),
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.badge),
                         ),
                         style: GoogleFonts.workSans(),
                       ),
@@ -194,48 +236,6 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                           prefixIcon: const Icon(Icons.phone),
                         ),
                         style: GoogleFonts.workSans(),
-                      ),
-                      const SizedBox(height: 15),
-                      DropdownButtonFormField<String>(
-                        value: selectedDepartment,
-                        validator: (value) =>
-                        value == null ? "Select department" : null,
-                        decoration: InputDecoration(
-                          labelText: "Department",
-                          labelStyle: GoogleFonts.workSans(),
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.local_hospital),
-                        ),
-                        style: GoogleFonts.workSans(color: Colors.black),
-                        items: [
-                          'General OPD',
-                          "Oncology",
-                          'Cardiology',
-                          "Neurology",
-                          "Ophthalmology",
-                          "Pediatrics",
-                          'Dermatology',
-                          "Nephrology",
-                          "Gastroenterology",
-                          "General Surgery",
-                          "Emergency Medicine",
-                          "Discharge Summary",
-                          "OT Notes",
-                          "Default"
-                        ]
-                            .map((dept) => DropdownMenuItem(
-                          value: dept,
-                          child: Text(
-                            dept,
-                            style: GoogleFonts.workSans(),
-                          ),
-                        ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedDepartment = value;
-                          });
-                        },
                       ),
                     ],
                   ),
@@ -348,14 +348,14 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                               pw.SizedBox(height: 10),
 
                               // Patient Info Fields (Single column)
-                              ...[
+                              ...([
                                 "Name: ${nameController.text}",
-                                "Patient ID: ${idController.text}",
+                                if (widget.recordId != null) "Patient ID: ${widget.recordId}",
                                 "Age: ${ageController.text}",
                                 "Mobile: ${mobileController.text}",
                                 "Address: ${addressController.text}",
-                                "Department: $selectedDepartment",
-                              ].map(
+                                if (widget.selectedDepartment != null) "Department: ${widget.selectedDepartment}",
+                              ]).map(
                                     (field) => pw.Padding(
                                   padding: const pw.EdgeInsets.symmetric(
                                       vertical: 5),
@@ -459,7 +459,6 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         ),
                       );
 
-                      // <CHANGE> Use the same bytes for showing and uploading
                       final Uint8List bytes = await pdf.save();
 
                       // Show/Print the PDF
@@ -470,16 +469,16 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       // Upload to Firebase
                       try {
                         final fileName =
-                            '${DateTime.now().millisecondsSinceEpoch}_${idController.text.isNotEmpty ? idController.text : 'unknown'}.pdf';
+                            '${DateTime.now().millisecondsSinceEpoch}_${widget.recordId?.isNotEmpty == true ? widget.recordId : 'unknown'}.pdf';
 
                         final url = await _uploadPdfToFirebase(
                           bytes,
                           fileName: fileName,
                           patientId:
-                          idController.text.isNotEmpty ? idController.text : 'unknown',
+                          widget.recordId?.isNotEmpty == true ? widget.recordId! : 'unknown',
                           patientName:
                           nameController.text.isNotEmpty ? nameController.text : 'unknown',
-                          department: selectedDepartment ?? 'Default',
+                          department: widget.selectedDepartment ?? 'Default',
                         );
 
                         if (!mounted) return;

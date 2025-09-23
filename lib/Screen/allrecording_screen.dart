@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:voicedoc/modul/recording_modul.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import '../AllVideo.dart';
 import '../PDF/AllPDF.dart';
 
 class AllRecordingsScreen extends StatefulWidget {
@@ -39,6 +40,13 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
   }
 
   Future<void> _playPause(RecordingMeta meta) async {
+    // Add null check for meta.filePath
+    if (meta.filePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('File path is missing. Cannot play.', style: GoogleFonts.workSans())));
+      return;
+    }
+
     try {
       if (_playingPath == meta.filePath) {
         await _player.pause();
@@ -47,7 +55,8 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
         });
       } else {
         await _player.stop();
-        await _player.play(DeviceFileSource(meta.filePath));
+        // Use a null-safe operator or cast to a non-nullable type
+        await _player.play(DeviceFileSource(meta.filePath!));
         setState(() {
           _playingPath = meta.filePath;
         });
@@ -64,23 +73,27 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
     }
   }
 
-  Future<void> _download(RecordingMeta meta) async {
-    try {
-      await Share.shareXFiles([XFile(meta.filePath)],
-          text:
-          '${meta.id} • ${DateTime.fromMillisecondsSinceEpoch(meta.timestampMillis).toLocal()}');
-    } catch (e) {
-      debugPrint('share error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Cannot share file', style: GoogleFonts.workSans())));
-    }
-  }
-
   Future<void> _removeRecording(RecordingMeta meta) async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Delete the actual files from the device storage
+    try {
+      if (meta.filePath != null && await File(meta.filePath!).exists()) {
+        await File(meta.filePath!).delete();
+      }
+      if (meta.videoPath != null && await File(meta.videoPath!).exists()) {
+        await File(meta.videoPath!).delete();
+      }
+    } catch (e) {
+      debugPrint('Error deleting files: $e');
+    }
+
     setState(() {
-      _all.removeWhere((r) => r.filePath == meta.filePath);
+      // Remove the metadata entry from the list
+      _all.removeWhere((r) => r.id == meta.id && r.timestampMillis == meta.timestampMillis);
     });
+
+    // Save the updated list to SharedPreferences
     final s = jsonEncode(_all.map((e) => e.toJson()).toList());
     await prefs.setString('recordings_v1', s);
   }
@@ -129,16 +142,13 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.download_rounded, color: Colors.indigo),
-              onPressed: () => _download(meta),
-            ),
-            IconButton(
+              // Disable button if filePath is null
                 icon: Icon(
                     _playingPath == meta.filePath
                         ? Icons.pause
                         : Icons.play_arrow,
                     color: Colors.indigo),
-                onPressed: () => _playPause(meta)),
+                onPressed: meta.filePath == null ? null : () => _playPause(meta)),
             IconButton(
               icon: const Icon(Icons.delete_forever, color: Colors.red),
               onPressed: () => _removeRecording(meta),
@@ -195,60 +205,76 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // 🔹 Row me Show dropdown (left) aur PDF button (right)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(color: Colors.white),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('Show',
-                              style:
-                              GoogleFonts.workSans(color: Colors.white)),
-                          const SizedBox(width: 8),
-                          DropdownButton<int>(
-                            value: _perPage,
-                            dropdownColor: Colors.black,
-                            style: GoogleFonts.workSans(color: Colors.white),
-                            iconEnabledColor: Colors.white,
-                            underline: Container(
-                              height: 1,
-                              color: Colors.white,
-                            ),
-                            items: [10, 20, 50, 100]
-                                .map((e) => DropdownMenuItem(
-                              value: e,
-                              child: Text(
-                                '$e',
-                                style: GoogleFonts.workSans(
-                                    color: Colors.white),
-                              ),
-                            ))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setState(() {
-                                _perPage = v;
-                                _page = 1;
-                              });
-                            },
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(color: Colors.white),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Text('Show',
+                          style:
+                          GoogleFonts.workSans(color: Colors.white)),
+                      const SizedBox(width: 8),
+                      DropdownButton<int>(
+                        value: _perPage,
+                        dropdownColor: Colors.black,
+                        style: GoogleFonts.workSans(color: Colors.white),
+                        iconEnabledColor: Colors.white,
+                        underline: Container(
+                          height: 1,
+                          color: Colors.white,
+                        ),
+                        items: [10, 20, 50, 100]
+                            .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(
+                            '$e',
+                            style: GoogleFonts.workSans(
+                                color: Colors.white),
                           ),
-                        ],
+                        ))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() {
+                            _perPage = v;
+                            _page = 1;
+                          });
+                        },
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.videocam, color: Colors.white,),
+                      label: Text("All Videos",
+                          style: GoogleFonts.workSans(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AllVideoScreen()),
+                        );
+                      },
                     ),
+                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
                         foregroundColor: Colors.white,
                       ),
-                      icon: const Icon(Icons.picture_as_pdf,color: Colors.white,),
+                      icon: const Icon(Icons.picture_as_pdf, color: Colors.white,),
                       label: Text("All PDF",
                           style: GoogleFonts.workSans(color: Colors.white)),
                       onPressed: () {
@@ -261,7 +287,6 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
                 Expanded(
                   child: _all.isEmpty

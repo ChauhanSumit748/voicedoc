@@ -1,27 +1,54 @@
+// lib/modul/recording_modul.dart
+
 class RecordingMeta {
-  String id; // Record ID (name)
-  String filePath;
-  int timestampMillis;
-  List<String> fields;
+  final String id;
+  final String? filePath;
+  final String? videoPath;
+  final int timestampMillis;
+  final List<String> fields;
+  bool pdfGenerated;
 
   RecordingMeta({
     required this.id,
-    required this.filePath,
+    this.filePath,
+    this.videoPath,
     required this.timestampMillis,
     required this.fields,
+    this.pdfGenerated = false,
   });
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'filePath': filePath,
-    'timestampMillis': timestampMillis,
-    'fields': fields,
-  };
+  factory RecordingMeta.fromJson(Map<String, dynamic> json) {
+    return RecordingMeta(
+      id: json['id'] as String,
+      filePath: json['filePath'] as String?,
+      videoPath: json['videoPath'] as String?,
+      timestampMillis: (json['timestampMillis'] is int)
+          ? json['timestampMillis'] as int
+          : int.tryParse('${json['timestampMillis']}') ?? 0,
+      fields: (json['fields'] != null)
+          ? List<String>.from(json['fields'] as List<dynamic>)
+          : <String>[],
+      pdfGenerated: json['pdfGenerated'] == null
+          ? false
+          : (json['pdfGenerated'] is bool
+          ? json['pdfGenerated'] as bool
+          : (json['pdfGenerated'].toString().toLowerCase() == 'true')),
+    );
+  }
 
-  static RecordingMeta fromJson(Map<String, dynamic> j) => RecordingMeta(
-    id: j['id'],
-    filePath: j['filePath'],
-    timestampMillis: j['timestampMillis'],
-    fields: List<String>.from(j['fields'] ?? []),
-  );
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'filePath': filePath,
+      'videoPath': videoPath,
+      'timestampMillis': timestampMillis,
+      'fields': fields,
+      'pdfGenerated': pdfGenerated,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'RecordingMeta(id: $id, filePath: $filePath, videoPath: $videoPath, timestamp: $timestampMillis, fields: $fields, pdfGenerated: $pdfGenerated)';
+  }
 }

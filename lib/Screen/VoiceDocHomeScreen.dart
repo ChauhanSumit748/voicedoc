@@ -6,9 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voicedoc/Screen/recorder_screen.dart';
 import '../Drawer/AboutScreen.dart';
 import '../Drawer/HelpSupportScreen.dart';
-import '../Drawer/ProfileScreen.dart';
 import '../Drawer/TermsandConditions.dart';
-import 'Register.dart';
 import 'allrecording_screen.dart';
 
 class VoiceDocHomeScreen extends StatefulWidget {
@@ -36,47 +34,107 @@ class _VoiceDocHomeScreenState extends State<VoiceDocHomeScreen> {
     });
   }
 
+  /// Handle back button
+  Future<bool> _onWillPop() async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            const Icon(Icons.exit_to_app, color: Color(0xFF111827)),
+            const SizedBox(width: 10),
+            Text(
+              'Exit App',
+              style: GoogleFonts.workSans(
+                color: const Color(0xFF111827),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to exit the app?',
+          style: GoogleFonts.workSans(color: const Color(0xFF111827)),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3F51B5),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.workSans(
+                  color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => exit(0),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3F51B5),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              'Exit',
+              style: GoogleFonts.workSans(
+                  color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: true,
-        elevation: 6,
-        toolbarHeight: 70,
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF3F51B5), Color(0xFF5C6BC0), Color(0xFF7986CB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: true,
+          elevation: 6,
+          toolbarHeight: 70,
+          backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: Colors.white),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF3F51B5), Color(0xFF5C6BC0), Color(0xFF7986CB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
             ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
+          ),
+          title: Text(
+            tabs[_selectedIndex],
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
+          ),
+          centerTitle: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
             ),
           ),
         ),
-        title: Text(
-          tabs[_selectedIndex],
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-        ),
+        drawer: _buildDrawer(context),
+        body: _selectedIndex == 0 ? RecorderScreen() : AllRecordingsScreen(),
+        bottomNavigationBar: _buildBottomNav(),
       ),
-      drawer: _buildDrawer(context),
-      body: _selectedIndex == 0 ? RecorderScreen() : AllRecordingsScreen(),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -149,16 +207,6 @@ class _VoiceDocHomeScreenState extends State<VoiceDocHomeScreen> {
               ],
             ),
           ),
-          // ListTile(
-          //   leading: const Icon(Icons.person),
-          //   title: const Text("Profile"),
-          //   onTap: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (_) => const ProfileScreen()),
-          //     );
-          //   },
-          // ),
           ListTile(
             leading: const Icon(Icons.help_outline),
             title: const Text("Help & Support"),
@@ -187,13 +235,6 @@ class _VoiceDocHomeScreenState extends State<VoiceDocHomeScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => TermsandConditions()),
               );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text("Logout"),
-            onTap: () {
-              _handleLogout(context);
             },
           ),
         ],
@@ -251,81 +292,3 @@ class _VoiceDocHomeScreenState extends State<VoiceDocHomeScreen> {
   }
 }
 
-void _handleLogout(BuildContext context) async {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Row(
-          children: [
-            const Icon(Icons.logout, color: Color(0xFF111827)),
-            const SizedBox(width: 10),
-            Text(
-              'Logout',
-              style: GoogleFonts.workSans(
-                color: const Color(0xFF111827),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to logout?',
-          style: GoogleFonts.workSans(color: const Color(0xFF111827)),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3F51B5),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.workSans(
-                  color: Colors.white, fontWeight: FontWeight.w500),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('isLoggedIn', false);
-              await prefs.remove('userEmail');
-
-              Navigator.pushAndRemoveUntil(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      RegisterScreen(),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return SlideTransition(
-                      position: animation.drive(
-                        Tween(begin: const Offset(-1.0, 0.0), end: Offset.zero)
-                            .chain(CurveTween(curve: Curves.easeInOut)),
-                      ),
-                      child: child,
-                    );
-                  },
-                ),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3F51B5),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              'Logout',
-              style: GoogleFonts.workSans(
-                  color: Colors.white, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
