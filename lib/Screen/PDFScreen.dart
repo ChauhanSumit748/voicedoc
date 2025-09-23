@@ -4,6 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
+// <CHANGE> Firebase & bytes
+import 'dart:typed_data';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class HospitalPDFPage extends StatefulWidget {
   const HospitalPDFPage({super.key});
@@ -24,6 +29,42 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
   bool agree = false;
 
   final _formKey = GlobalKey<FormState>();
+
+  // <CHANGE> Upload helper: saves bytes to Firebase Storage and metadata to Firestore
+  Future<String> _uploadPdfToFirebase(
+      Uint8List bytes, {
+        required String fileName,
+        required String patientId,
+        required String patientName,
+        required String department,
+      }) async {
+    // Storage path: hospital_forms/{fileName}
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('hospital_forms')
+        .child(fileName);
+
+    final metadata = SettableMetadata(contentType: 'application/pdf');
+
+    // Upload to Storage
+    await ref.putData(bytes, metadata);
+
+    // Get a download URL (depends on your Storage rules)
+    final downloadUrl = await ref.getDownloadURL();
+
+    // Optional: Save metadata to Firestore
+    await FirebaseFirestore.instance.collection('hospital_forms').add({
+      'patientId': patientId,
+      'patientName': patientName,
+      'department': department,
+      'fileName': fileName,
+      'storagePath': ref.fullPath,
+      'downloadUrl': downloadUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return downloadUrl;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +130,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       TextFormField(
                         controller: nameController,
                         validator: (value) =>
-                            value!.isEmpty ? "Enter patient name" : null,
+                        value!.isEmpty ? "Enter patient name" : null,
                         decoration: InputDecoration(
                           labelText: "Patient Name",
                           labelStyle: GoogleFonts.workSans(),
@@ -102,7 +143,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       TextFormField(
                         controller: idController,
                         validator: (value) =>
-                            value!.isEmpty ? "Enter patient ID" : null,
+                        value!.isEmpty ? "Enter patient ID" : null,
                         decoration: InputDecoration(
                           labelText: "Patient ID",
                           labelStyle: GoogleFonts.workSans(),
@@ -116,7 +157,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         controller: ageController,
                         keyboardType: TextInputType.number,
                         validator: (value) =>
-                            value!.isEmpty ? "Enter patient age" : null,
+                        value!.isEmpty ? "Enter patient age" : null,
                         decoration: InputDecoration(
                           labelText: "Age",
                           labelStyle: GoogleFonts.workSans(),
@@ -129,7 +170,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       TextFormField(
                         controller: addressController,
                         validator: (value) =>
-                            value!.isEmpty ? "Enter address" : null,
+                        value!.isEmpty ? "Enter address" : null,
                         decoration: InputDecoration(
                           labelText: "Address",
                           labelStyle: GoogleFonts.workSans(),
@@ -143,9 +184,9 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         controller: mobileController,
                         keyboardType: TextInputType.phone,
                         validator: (value) =>
-                            value!.isEmpty || value.length != 10
-                                ? "Enter valid 10-digit mobile number"
-                                : null,
+                        value!.isEmpty || value.length != 10
+                            ? "Enter valid 10-digit mobile number"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Mobile Number",
                           labelStyle: GoogleFonts.workSans(),
@@ -158,7 +199,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       DropdownButtonFormField<String>(
                         value: selectedDepartment,
                         validator: (value) =>
-                            value == null ? "Select department" : null,
+                        value == null ? "Select department" : null,
                         decoration: InputDecoration(
                           labelText: "Department",
                           labelStyle: GoogleFonts.workSans(),
@@ -183,12 +224,12 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                           "Default"
                         ]
                             .map((dept) => DropdownMenuItem(
-                                  value: dept,
-                                  child: Text(
-                                    dept,
-                                    style: GoogleFonts.workSans(),
-                                  ),
-                                ))
+                          value: dept,
+                          child: Text(
+                            dept,
+                            style: GoogleFonts.workSans(),
+                          ),
+                        ))
                             .toList(),
                         onChanged: (value) {
                           setState(() {
@@ -253,7 +294,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
               TextFormField(
                 controller: signerNameController,
                 validator: (value) =>
-                    value!.isEmpty ? "Enter signer name" : null,
+                value!.isEmpty ? "Enter signer name" : null,
                 decoration: InputDecoration(
                   labelText: "Signer Name",
                   labelStyle: GoogleFonts.workSans(),
@@ -315,21 +356,21 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                                 "Address: ${addressController.text}",
                                 "Department: $selectedDepartment",
                               ].map(
-                                (field) => pw.Padding(
+                                    (field) => pw.Padding(
                                   padding: const pw.EdgeInsets.symmetric(
                                       vertical: 5),
                                   child: pw.Container(
                                     padding: const pw.EdgeInsets.all(8),
                                     decoration: pw.BoxDecoration(
                                       border:
-                                          pw.Border.all(color: PdfColors.grey),
+                                      pw.Border.all(color: PdfColors.grey),
                                       borderRadius: const pw.BorderRadius.all(
                                           pw.Radius.circular(5)),
                                       color: PdfColors.blue50,
                                     ),
                                     child: pw.Text(field,
                                         style:
-                                            const pw.TextStyle(fontSize: 14)),
+                                        const pw.TextStyle(fontSize: 14)),
                                   ),
                                 ),
                               ),
@@ -346,8 +387,8 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                               pw.SizedBox(height: 5),
                               pw.Text(
                                 "By signing this form, the patient agrees to all hospital rules and regulations. "
-                                "The hospital will not be liable for misinformation provided by the patient. "
-                                "Emergency procedures may be carried out if required.",
+                                    "The hospital will not be liable for misinformation provided by the patient. "
+                                    "Emergency procedures may be carried out if required.",
                                 textAlign: pw.TextAlign.justify,
                                 style: const pw.TextStyle(fontSize: 12),
                               ),
@@ -362,18 +403,18 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                                     height: 15,
                                     decoration: pw.BoxDecoration(
                                       border:
-                                          pw.Border.all(color: PdfColors.black),
+                                      pw.Border.all(color: PdfColors.black),
                                     ),
                                     child: agree
                                         ? pw.Center(
-                                            child: pw.Text(
-                                              "",
-                                              style: pw.TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight:
-                                                      pw.FontWeight.bold),
-                                            ),
-                                          )
+                                      child: pw.Text(
+                                        "",
+                                        style: pw.TextStyle(
+                                            fontSize: 12,
+                                            fontWeight:
+                                            pw.FontWeight.bold),
+                                      ),
+                                    )
                                         : pw.Container(),
                                   ),
                                   pw.SizedBox(width: 8),
@@ -394,7 +435,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                                 children: [
                                   pw.Column(
                                     crossAxisAlignment:
-                                        pw.CrossAxisAlignment.center,
+                                    pw.CrossAxisAlignment.center,
                                     children: [
                                       pw.Container(
                                         width: 180,
@@ -418,9 +459,39 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         ),
                       );
 
+                      // <CHANGE> Use the same bytes for showing and uploading
+                      final Uint8List bytes = await pdf.save();
+
+                      // Show/Print the PDF
                       await Printing.layoutPdf(
-                        onLayout: (format) async => pdf.save(),
+                        onLayout: (format) async => bytes,
                       );
+
+                      // Upload to Firebase
+                      try {
+                        final fileName =
+                            '${DateTime.now().millisecondsSinceEpoch}_${idController.text.isNotEmpty ? idController.text : 'unknown'}.pdf';
+
+                        final url = await _uploadPdfToFirebase(
+                          bytes,
+                          fileName: fileName,
+                          patientId:
+                          idController.text.isNotEmpty ? idController.text : 'unknown',
+                          patientName:
+                          nameController.text.isNotEmpty ? nameController.text : 'unknown',
+                          department: selectedDepartment ?? 'Default',
+                        );
+
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('PDF Firebase me save ho gaya. URL: $url')),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Upload failed: $e')),
+                        );
+                      }
                     } else if (!agree) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -441,7 +512,7 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         fontSize: 16, fontWeight: FontWeight.bold),
                     foregroundColor: Colors.white, // Text color white
                     backgroundColor:
-                        Colors.blue, // Button background color blue
+                    Colors.blue, // Button background color blue
                   ),
                 ),
               )

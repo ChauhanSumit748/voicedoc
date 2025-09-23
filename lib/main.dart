@@ -1,9 +1,19 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
   import 'Screen/VoiceDocHomeScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'AIzaSyDI9U3lfRpFuWK66wRyh6_GKbBA-tcCJeE',
+      appId: '1:657344197924:android:1fbe660e374a7a78362fb1',
+      messagingSenderId: '657344197924',
+      projectId: 'candid-cf9fc',
+      storageBucket: 'candid-cf9fc.appspot.com',
+    ),
+  );
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
    bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;

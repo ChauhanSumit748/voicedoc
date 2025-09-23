@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:voicedoc/modul/recording_modul.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'PDFScreen.dart';
+import '../PDF/AllPDF.dart';
 
 class AllRecordingsScreen extends StatefulWidget {
   @override
@@ -249,13 +249,13 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                         foregroundColor: Colors.white,
                       ),
                       icon: const Icon(Icons.picture_as_pdf,color: Colors.white,),
-                      label: Text("PDF",
+                      label: Text("All PDF",
                           style: GoogleFonts.workSans(color: Colors.white)),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => HospitalPDFPage()),
+                              builder: (context) => AllPdfSaveScreen()),
                         );
                       },
                     ),

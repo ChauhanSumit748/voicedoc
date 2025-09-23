@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voicedoc/modul/recording_modul.dart';
 import 'package:flutter/scheduler.dart' as scheduler;
 
+import 'PDFScreen.dart';
+
 class RecorderScreen extends StatefulWidget {
   @override
   State<RecorderScreen> createState() => _RecorderScreenState();
@@ -334,6 +336,24 @@ class _RecorderScreenState extends State<RecorderScreen> {
                       ),
                     ),
                   ],
+                ),
+                SizedBox(height: 10,),
+
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.picture_as_pdf,color: Colors.white,),
+                  label: Text("PDF",
+                      style: GoogleFonts.workSans(color: Colors.white)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => HospitalPDFPage()),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 30),

@@ -52,6 +52,7 @@ dependencies:
   flutter_launcher_icons:
   firebase_core:
   firebase_storage: ^12.4.9
+  cloud_firestore: ^5.6.11
 
 dev_dependencies:
   flutter_test:
