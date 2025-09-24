@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voicedoc/modul/recording_modul.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
-import '../AllVideo.dart';
-import '../PDF/AllPDF.dart';
+ import '../PDF/AllPDF.dart';
+import '../Tabbar/screen/media_tab_screen.dart';
 
 class AllRecordingsScreen extends StatefulWidget {
   @override
@@ -264,7 +264,7 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => AllVideoScreen()),
+                              builder: (context) => MediaTabScreen()),
                         );
                       },
                     ),
@@ -288,71 +288,10 @@ class _AllRecordingsScreenState extends State<AllRecordingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Expanded(
-                  child: _all.isEmpty
-                      ? Center(
-                      child: Text('No recordings saved',
-                          style: GoogleFonts.workSans(color: Colors.white)))
-                      : ListView(
-                    children: _paged.map((r) => _buildRow(r)).toList(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _page == 1 ? null : _prevPage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: Text('Previous',
-                            style: GoogleFonts.workSans(color: Colors.black)),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Page $_page of $totalPages',
-                        style: GoogleFonts.workSans(color: Colors.white),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _page >= totalPages ? null : _nextPage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: Text('Next',
-                            style: GoogleFonts.workSans(color: Colors.black)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
+               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _downloadAllPrompt() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Download All', style: GoogleFonts.workSans()),
-        content: Text(
-          'This demo provides Download (share) per recording. To implement "download all" you can create a ZIP of all files and share it.',
-          style: GoogleFonts.workSans(),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK', style: GoogleFonts.workSans()))
-        ],
       ),
     );
   }

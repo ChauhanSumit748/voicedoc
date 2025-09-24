@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:voicedoc/Screen/recorder_screen.dart';
+import 'package:voicedoc/Screen/Recorder/recorder_screen.dart';
 import '../Drawer/AboutScreen.dart';
 import '../Drawer/HelpSupportScreen.dart';
 import '../Drawer/TermsandConditions.dart';

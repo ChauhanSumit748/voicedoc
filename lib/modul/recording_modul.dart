@@ -2,6 +2,7 @@
 
 class RecordingMeta {
   final String id;
+  final String? audioUrl; // New field for audio URL
   final String? filePath;
   final String? videoPath;
   final int timestampMillis;
@@ -11,6 +12,7 @@ class RecordingMeta {
   RecordingMeta({
     required this.id,
     this.filePath,
+    this.audioUrl,
     this.videoPath,
     required this.timestampMillis,
     required this.fields,
@@ -21,6 +23,7 @@ class RecordingMeta {
     return RecordingMeta(
       id: json['id'] as String,
       filePath: json['filePath'] as String?,
+      audioUrl: json['audioUrl'],
       videoPath: json['videoPath'] as String?,
       timestampMillis: (json['timestampMillis'] is int)
           ? json['timestampMillis'] as int
@@ -40,6 +43,7 @@ class RecordingMeta {
     return {
       'id': id,
       'filePath': filePath,
+      'audioUrl': audioUrl,
       'videoPath': videoPath,
       'timestampMillis': timestampMillis,
       'fields': fields,
@@ -49,6 +53,6 @@ class RecordingMeta {
 
   @override
   String toString() {
-    return 'RecordingMeta(id: $id, filePath: $filePath, videoPath: $videoPath, timestamp: $timestampMillis, fields: $fields, pdfGenerated: $pdfGenerated)';
+    return 'RecordingMeta(id: $id, filePath: $filePath,audioUrl: $audioUrl, videoPath: $videoPath, timestamp: $timestampMillis, fields: $fields, pdfGenerated: $pdfGenerated)';
   }
 }

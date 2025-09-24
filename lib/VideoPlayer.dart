@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  final String videoPath;
+  final String videoPath; // Changed from videoPath to videoUrl
 
   const VideoPlayerScreen({Key? key, required this.videoPath}) : super(key: key);
 
@@ -13,15 +12,16 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late VideoPlayerController _controller;
+  late Future<void> _initializeVideoPlayerFuture;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.file(File(widget.videoPath))
-      ..initialize().then((_) {
-        // Ensure the first frame is shown and update state to make the controller appear.
-        setState(() {});
-      });
+    // Use VideoPlayerController.networkUrl to play a video from a URL
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoPath));
+
+    // Initialize the controller and store the future for later use
+    _initializeVideoPlayerFuture = _controller.initialize();
   }
 
   @override
@@ -35,14 +35,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Video Playback'),
+        backgroundColor: Colors.blue[800],
+        foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: _controller.value.isInitialized
-            ? AspectRatio(
-          aspectRatio: _controller.value.aspectRatio,
-          child: VideoPlayer(_controller),
-        )
-            : CircularProgressIndicator(),
+      body: FutureBuilder(
+        future: _initializeVideoPlayerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // If the VideoPlayerController has finished initialization, use
+            // the AspectRatio widget to ensure the video has the correct
+            // aspect ratio.
+            return Center(
+              child: AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+            );
+          } else {
+            // Otherwise, display a loading spinner.
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
