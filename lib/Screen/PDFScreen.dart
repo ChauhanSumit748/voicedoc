@@ -31,7 +31,6 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
   final TextEditingController recordIdController = TextEditingController();
   final TextEditingController departmentController = TextEditingController();
 
-  String? selectedDepartment;
   bool agree = false;
 
   final _formKey = GlobalKey<FormState>();
@@ -39,13 +38,24 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
   @override
   void initState() {
     super.initState();
-    selectedDepartment = widget.selectedDepartment;
     if (widget.recordId != null) {
       recordIdController.text = widget.recordId!;
     }
     if (widget.selectedDepartment != null) {
       departmentController.text = widget.selectedDepartment!;
     }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    ageController.dispose();
+    addressController.dispose();
+    mobileController.dispose();
+    signerNameController.dispose();
+    recordIdController.dispose();
+    departmentController.dispose();
+    super.dispose();
   }
 
   Future<String> _uploadPdfToFirebase(
@@ -150,38 +160,38 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
-                      if (widget.recordId != null) ...[
-                        TextFormField(
-                          controller: recordIdController,
-                          enabled: false, // Read-only
-                          decoration: InputDecoration(
-                            labelText: "Record ID",
-                            labelStyle: GoogleFonts.workSans(),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.badge),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                          ),
-                          style: GoogleFonts.workSans(),
+                      // Patient ID Field
+                      TextFormField(
+                        controller: recordIdController,
+                        enabled: false,
+                        decoration: InputDecoration(
+                          labelText: "Record ID",
+                          labelStyle: GoogleFonts.workSans(),
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.badge),
+                          filled: true,
+                          fillColor: Colors.grey[100],
                         ),
-                        const SizedBox(height: 15),
-                      ],
-                      if (widget.selectedDepartment != null) ...[
-                        TextFormField(
-                          controller: departmentController,
-                          enabled: false, // Read-only
-                          decoration: InputDecoration(
-                            labelText: "Department",
-                            labelStyle: GoogleFonts.workSans(),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.local_hospital),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                          ),
-                          style: GoogleFonts.workSans(),
+                        style: GoogleFonts.workSans(),
+                      ),
+                      const SizedBox(height: 15),
+
+                      // Department Field
+                      TextFormField(
+                        controller: departmentController,
+                        enabled: false,
+                        decoration: InputDecoration(
+                          labelText: "Department",
+                          labelStyle: GoogleFonts.workSans(),
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.local_hospital),
+                          filled: true,
+                          fillColor: Colors.grey[100],
                         ),
-                        const SizedBox(height: 15),
-                      ],
+                        style: GoogleFonts.workSans(),
+                      ),
+                      const SizedBox(height: 15),
+
                       TextFormField(
                         controller: nameController,
                         validator: (value) =>
@@ -347,30 +357,25 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                               ),
                               pw.SizedBox(height: 10),
 
-                              // Patient Info Fields (Single column)
+                              // Patient Info Fields
                               ...([
                                 "Name: ${nameController.text}",
-                                if (widget.recordId != null) "Patient ID: ${widget.recordId}",
+                                if (recordIdController.text.isNotEmpty) "Patient ID: ${recordIdController.text}",
                                 "Age: ${ageController.text}",
                                 "Mobile: ${mobileController.text}",
                                 "Address: ${addressController.text}",
-                                if (widget.selectedDepartment != null) "Department: ${widget.selectedDepartment}",
+                                if (departmentController.text.isNotEmpty) "Department: ${departmentController.text}",
                               ]).map(
                                     (field) => pw.Padding(
-                                  padding: const pw.EdgeInsets.symmetric(
-                                      vertical: 5),
+                                  padding: const pw.EdgeInsets.symmetric(vertical: 5),
                                   child: pw.Container(
                                     padding: const pw.EdgeInsets.all(8),
                                     decoration: pw.BoxDecoration(
-                                      border:
-                                      pw.Border.all(color: PdfColors.grey),
-                                      borderRadius: const pw.BorderRadius.all(
-                                          pw.Radius.circular(5)),
+                                      border: pw.Border.all(color: PdfColors.grey),
+                                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
                                       color: PdfColors.blue50,
                                     ),
-                                    child: pw.Text(field,
-                                        style:
-                                        const pw.TextStyle(fontSize: 14)),
+                                    child: pw.Text(field, style: const pw.TextStyle(fontSize: 14)),
                                   ),
                                 ),
                               ),
@@ -402,20 +407,9 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                                     width: 15,
                                     height: 15,
                                     decoration: pw.BoxDecoration(
-                                      border:
-                                      pw.Border.all(color: PdfColors.black),
+                                      border: pw.Border.all(color: PdfColors.black),
+                                      color: agree ? PdfColors.white : PdfColors.white,
                                     ),
-                                    child: agree
-                                        ? pw.Center(
-                                      child: pw.Text(
-                                        "",
-                                        style: pw.TextStyle(
-                                            fontSize: 12,
-                                            fontWeight:
-                                            pw.FontWeight.bold),
-                                      ),
-                                    )
-                                        : pw.Container(),
                                   ),
                                   pw.SizedBox(width: 8),
                                   pw.Expanded(
@@ -434,15 +428,13 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                                 mainAxisAlignment: pw.MainAxisAlignment.end,
                                 children: [
                                   pw.Column(
-                                    crossAxisAlignment:
-                                    pw.CrossAxisAlignment.center,
+                                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                                     children: [
                                       pw.Container(
                                         width: 180,
                                         height: 60,
                                         decoration: pw.BoxDecoration(
-                                          border: pw.Border.all(
-                                              color: PdfColors.black),
+                                          border: pw.Border.all(color: PdfColors.black),
                                         ),
                                       ),
                                       pw.SizedBox(height: 5),
@@ -469,16 +461,14 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                       // Upload to Firebase
                       try {
                         final fileName =
-                            '${DateTime.now().millisecondsSinceEpoch}_${widget.recordId?.isNotEmpty == true ? widget.recordId : 'unknown'}.pdf';
+                            '${DateTime.now().millisecondsSinceEpoch}_${recordIdController.text.isNotEmpty ? recordIdController.text : 'unknown'}.pdf';
 
                         final url = await _uploadPdfToFirebase(
                           bytes,
                           fileName: fileName,
-                          patientId:
-                          widget.recordId?.isNotEmpty == true ? widget.recordId! : 'unknown',
-                          patientName:
-                          nameController.text.isNotEmpty ? nameController.text : 'unknown',
-                          department: widget.selectedDepartment ?? 'Default',
+                          patientId: recordIdController.text.isNotEmpty ? recordIdController.text : 'unknown',
+                          patientName: nameController.text.isNotEmpty ? nameController.text : 'unknown',
+                          department: departmentController.text,
                         );
 
                         if (!mounted) return;
@@ -509,9 +499,8 @@ class _HospitalPDFPageState extends State<HospitalPDFPage> {
                         horizontal: 20, vertical: 12),
                     textStyle: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold),
-                    foregroundColor: Colors.white, // Text color white
-                    backgroundColor:
-                    Colors.blue, // Button background color blue
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue,
                   ),
                 ),
               )

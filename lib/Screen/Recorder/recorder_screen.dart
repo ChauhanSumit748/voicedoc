@@ -26,6 +26,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
   bool _isRecording = false;
   bool _isPaused = false;
   bool _isSaving = false;
+  bool _hasRecording = false; // New state variable
   String _timerText = '00:00';
   Duration _recordDuration = Duration.zero;
   Duration _elapsedBeforePause = Duration.zero;
@@ -255,6 +256,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
         _saved.insert(0, meta);
         _isRecording = false;
         _isPaused = false;
+        _hasRecording = true; // Set the flag to true after a successful save
         _tempAudioFilePath = null;
         _elapsedBeforePause = Duration.zero;
         _recordDuration = Duration.zero;
@@ -427,21 +429,24 @@ class _RecorderScreenState extends State<RecorderScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: (_saved.isNotEmpty && !_saved.first.pdfGenerated) ? Colors.redAccent : Colors.grey,
+                    backgroundColor: _hasRecording ? Colors.blueAccent : Colors.grey,
                     foregroundColor: Colors.white,
                   ),
                   icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-                  label: Text("PDF", style: GoogleFonts.workSans(color: Colors.white)),
-                  onPressed: (_saved.isNotEmpty && !_saved.first.pdfGenerated) ? () async {
-                    await Navigator.push(context, MaterialPageRoute(builder: (context) => HospitalPDFPage(
-                      recordId: _recordId.trim().isNotEmpty ? _recordId.trim() : null,
-                      selectedDepartment: _selectedDefault != 'Default' ? _selectedDefault : null,
-                    )));
-                    setState(() {
-                      _saved.first.pdfGenerated = true;
-                    });
-                    await _saveMetaList();
-                  } : null,
+                  label: Text("Generate PDF", style: GoogleFonts.workSans(color: Colors.white)),
+                  onPressed: _hasRecording
+                      ? () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HospitalPDFPage(
+                          recordId: _recordId.trim(),
+                          selectedDepartment: _selectedDefault,
+                        ),
+                      ),
+                    );
+                  }
+                      : null, // This disables the button
                 ),
                 const SizedBox(height: 30),
                 Text('Please let everyone know that you\'re recording', style: bodyStyle.copyWith(color: Colors.white70)),
